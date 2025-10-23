@@ -286,60 +286,97 @@ elif submit3:
             fig = px.line_polar(skill_data, r='Match', theta='Skill', line_close=True)
             st.plotly_chart(fig)
 
-st.markdown("### ⚖️ Compare Two Resumes")
-col1, col2 = st.columns(2)
-with col1:
-    resume1 = st.file_uploader("Upload Resume 1 (PDF)", type=["pdf"], key="res1")
-with col2:
-    resume2 = st.file_uploader("Upload Resume 2 (PDF)", type=["pdf"], key="res2")
-try:
-    if st.button("Compare Resumes"):
-        if resume1 and resume2:
-            with st.spinner("Analyzing both resumes..."):
-                pdf1_content = input_pdf_setup(resume1)
-                pdf2_content = input_pdf_setup(resume2)
-                report1 = get_gemini_response(input_text, pdf1_content, input_prompt3)
-                report2 = get_gemini_response(input_text, pdf2_content, input_prompt3)
-                score1 = extract_match_percent(report1) or 0
-                score2 = extract_match_percent(report2) or 0
-                hr1 = get_gemini_response(input_text, pdf1_content, input_prompt1)
-                hr2 = get_gemini_response(input_text, pdf2_content, input_prompt1)
-            # Comparison table
-            comp_df = pd.DataFrame({
-                "Resume": ["Resume 1", "Resume 2"],
-                "ATS Score (%)": [score1, score2],
-                "Overall Recommendation": [
-                    "Better Fit" if score1 >= score2 else "Moderate Fit",
-                    "Better Fit" if score2 > score1 else "Moderate Fit"
-                ]
-            })
-            st.table(comp_df)
-            # HR feedback tabs
-            tab1, tab2 = st.tabs(["Resume 1 Details", "Resume 2 Details"])
-            with tab1:
-                st.subheader("Resume 1 HR Feedback")
-                st.markdown(hr1)
-            with tab2:
-                st.subheader("Resume 2 HR Feedback")
-                st.markdown(hr2)
+# st.markdown("### ⚖️ Compare Two Resumes")
+# col1, col2 = st.columns(2)
+# with col1:
+#     resume1 = st.file_uploader("Upload Resume 1 (PDF)", type=["pdf"], key="res1")
+# with col2:
+#     resume2 = st.file_uploader("Upload Resume 2 (PDF)", type=["pdf"], key="res2")
 
-            pdf1_content = input_pdf_setup(resume1)
-            pdf2_content = input_pdf_setup(resume2)
-            with st.spinner("Comparing both resumes..."):
-                comparison_result = get_gemini_response(
-                    input_text, 
-                    [pdf1_content, pdf2_content],  # send both resumes
-                    comparison_prompt
-                )
+# if st.button("Compare Resumes"):
+#         if resume1 and resume2:
+#             with st.spinner("Analyzing both resumes..."):
+#                 pdf1_content = input_pdf_setup(resume1)
+#                 pdf2_content = input_pdf_setup(resume2)
+#                 report1 = get_gemini_response(input_text, pdf1_content, input_prompt3)
+#                 report2 = get_gemini_response(input_text, pdf2_content, input_prompt3)
+#                 score1 = extract_match_percent(report1) or 0
+#                 score2 = extract_match_percent(report2) or 0
+#                 hr1 = get_gemini_response(input_text, pdf1_content, input_prompt1)
+#                 hr2 = get_gemini_response(input_text, pdf2_content, input_prompt1)
+#             # Comparison table
+#             comp_df = pd.DataFrame({
+#                 "Resume": ["Resume 1", "Resume 2"],
+#                 "ATS Score (%)": [score1, score2],
+#                 "Overall Recommendation": [
+#                     "Better Fit" if score1 >= score2 else "Moderate Fit",
+#                     "Better Fit" if score2 > score1 else "Moderate Fit"
+#                 ]
+#             })
+#             st.table(comp_df)
+#             # HR feedback tabs
+#             tab1, tab2 = st.tabs(["Resume 1 Details", "Resume 2 Details"])
+#             with tab1:
+#                 st.subheader("Resume 1 HR Feedback")
+#                 st.markdown(hr1)
+#             with tab2:
+#                 st.subheader("Resume 2 HR Feedback")
+#                 st.markdown(hr2)
 
-            st.subheader("📄 Resume Comparison Report")
-            st.markdown(comparison_result)
-            better_resume = "Resume 1" if score1 >= score2 else "Resume 2"
-            st.success(f"✅ Based on ATS score and HR analysis, **{better_resume}** is a stronger resume for this job.")
-        else:
-            st.error("Please upload both resumes for comparison.")
-except Exception as e:
-    st.warning("⚠️ Gemini API free tier allows only 2 requests/min. Please wait if you hit the limit.")
+#             pdf1_content = get_pdf_text(resume1)
+#             pdf2_content = get_pdf_text(resume2)
+#             with st.spinner("Comparing both resumes..."):
+#                 comparison_result = get_gemini_response(
+#                     input_text, 
+#                     [pdf1_content, pdf2_content],  # send both resumes
+#                     comparison_prompt
+#                 )
+
+#             st.subheader("📄 Resume Comparison Report")
+#             st.markdown(comparison_result)
+#             better_resume = "Resume 1" if score1 >= score2 else "Resume 2"
+#             st.success(f"✅ Based on ATS score and HR analysis, **{better_resume}** is a stronger resume for this job.")
+#         else:
+#             st.error("Please upload both resumes for comparison.")
+
+st.title("📊 Resume Comparison")
+
+st.write("Upload **two resumes** to compare and get detailed analysis including similarities, strengths, and improvement points.")
+
+pdf1 = st.file_uploader("Upload First Resume", type=["pdf"], key="compare_pdf1")
+pdf2 = st.file_uploader("Upload Second Resume", type=["pdf"], key="compare_pdf2")
+
+input_text = st.text_area("Enter the Job Description (JD)")
+
+if st.button("Compare Resumes"):
+    if pdf1 and pdf2:
+        with st.spinner("🔍 Analyzing and comparing resumes..."):
+            pdf1_content = get_pdf_text(pdf1)
+            pdf2_content = get_pdf_text(pdf2)
+
+            comparison_prompt = f"""
+            You are an expert HR evaluator.
+            Compare the two resumes below based on this job description: "{input_text}".
+
+            - Candidate 1's Resume:
+            {pdf1_content}
+            - Candidate 2's Resume:
+            {pdf2_content}
+
+            Provide a structured comparison:
+            1. Summary of both candidates.
+            2. Strengths and weaknesses of each.
+            3. Who is a better fit for the JD and why.
+            4. Any missing skills or improvements required.
+            """
+
+            # ✅ Fix: Pass merged text instead of list to Gemini
+            comparison_result = get_gemini_response(input_text, pdf1_content + "\n\n" + pdf2_content, comparison_prompt)
+
+            st.subheader("📋 Comparison Result")
+            st.write(comparison_result)
+    else:
+        st.warning("⚠️ Please upload both resumes for comparison.")
 
 st.markdown("### 💬 Ask AI about your resume")
 user_question = st.text_input("Enter your question here:")
