@@ -8,4 +8,3 @@ matplotlib
 wordcloud
 pandas
 plotly
-poppler-windows @ git+https://github.com/oschwartz10612/poppler-windows.git@2097c5975c2ff3fa39270b8e5fcc9093c481ff34
